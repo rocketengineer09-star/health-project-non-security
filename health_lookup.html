@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건강 정보 조회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --accent: #00d4aa;
+    --accent2: #0099ff;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --danger: #f85149;
+    --warn: #d29922;
+    --green: #3fb950;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(0,212,170,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ===== LOGIN ===== */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    animation: fadeUp .5s ease;
+  }
+
+  .logo {
+    text-align: center;
+  }
+  .logo .icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 12px;
+    box-shadow: 0 0 30px rgba(0,212,170,.3);
+  }
+  .logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+  }
+  .logo p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,.12);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .3px;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.98); }
+
+  /* ===== POPUP ===== */
+  .popup-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .popup-overlay.show { display: flex; }
+  .popup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+    animation: popIn .25s ease;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  .popup .popup-icon { font-size: 36px; margin-bottom: 12px; }
+  .popup h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .popup p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+  .popup-btn {
+    margin-top: 20px;
+    padding: 10px 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .popup-btn:hover { background: var(--border); }
+
+  /* ===== HEALTH DASHBOARD ===== */
+  #health-screen {
+    display: none;
+    width: 100%;
+    max-width: 700px;
+    padding: 20px;
+    animation: fadeUp .4s ease;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .dash-header .user-info h2 {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .dash-header .user-info p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .metric-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-color, var(--accent));
+  }
+  .metric-card .metric-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+  }
+  .metric-card .metric-icon { font-size: 20px; margin-bottom: 6px; }
+  .metric-card .metric-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .metric-card .metric-unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .bmi-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .bmi-bar-wrap h4 {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 16px;
+  }
+  .bmi-bar-track {
+    height: 10px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #0099ff 0%, #00d4aa 30%, #3fb950 50%, #d29922 70%, #f85149 100%);
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .bmi-pointer {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 8px rgba(255,255,255,.5);
+    transition: left .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bmi-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .bmi-value-label {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .bmi-status {
+    text-align: center;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    display: inline-block;
+    margin: 0 auto 12px;
+  }
+  .bmi-center { text-align: center; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.9); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="logo">
+    <div class="icon">🩺</div>
+    <h1>건강 정보 조회 시스템</h1>
+    <p>이름과 비밀번호를 입력하여 건강 정보를 확인하세요</p>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>이름</label>
+      <input id="input-name" type="text" placeholder="홍길동" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <input id="input-pw" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn" onclick="doLogin()">조회하기</button>
+  </div>
+</div>
+
+<!-- HEALTH DASHBOARD -->
+<div id="health-screen">
+  <div class="dash-header">
+    <div class="user-info">
+      <h2 id="dash-name"></h2>
+      <p id="dash-age"></p>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">← 로그아웃</button>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card" style="--card-color:#f85149">
+      <div class="metric-icon">❤️</div>
+      <div class="metric-label">심박수</div>
+      <div class="metric-value" id="v-hr"></div>
+      <div class="metric-unit">bpm</div>
+    </div>
+    <div class="metric-card" style="--card-color:#d29922">
+      <div class="metric-icon">🩸</div>
+      <div class="metric-label">혈압</div>
+      <div class="metric-value" style="font-size:20px" id="v-bp"></div>
+      <div class="metric-unit">mmHg</div>
+    </div>
+    <div class="metric-card" style="--card-color:#0099ff">
+      <div class="metric-icon">🍬</div>
+      <div class="metric-label">혈당량</div>
+      <div class="metric-value" id="v-bs"></div>
+      <div class="metric-unit">mg/dL</div>
+    </div>
+    <div class="metric-card" style="--card-color:#3fb950">
+      <div class="metric-icon">📏</div>
+      <div class="metric-label">키</div>
+      <div class="metric-value" id="v-ht"></div>
+      <div class="metric-unit">cm</div>
+    </div>
+    <div class="metric-card" style="--card-color:#00d4aa">
+      <div class="metric-icon">⚖️</div>
+      <div class="metric-label">몸무게</div>
+      <div class="metric-value" id="v-wt"></div>
+      <div class="metric-unit">kg</div>
+    </div>
+  </div>
+
+  <div class="bmi-bar-wrap">
+    <h4>BMI 지수</h4>
+    <div class="bmi-center">
+      <div class="bmi-value-label" id="v-bmi"></div>
+      <div><span class="bmi-status" id="v-bmi-status"></span></div>
+    </div>
+    <div class="bmi-bar-track" style="margin-top:14px">
+      <div class="bmi-pointer" id="bmi-pointer"></div>
+    </div>
+    <div class="bmi-labels">
+      <span>저체중<br>&lt;18.5</span>
+      <span>정상<br>18.5–22.9</span>
+      <span>과체중<br>23–24.9</span>
+      <span>비만<br>≥25</span>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div class="popup-overlay" id="popup">
+  <div class="popup">
+    <div class="popup-icon" id="popup-icon"></div>
+    <h3 id="popup-title"></h3>
+    <p id="popup-msg"></p>
+    <button class="popup-btn" onclick="closePopup()">확인</button>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const users = [
+  {name:"김민준", pw:"mj7421!", hr:72, bp:"118/76", bs:92, ht:175, wt:68, bmi:22.2, age:21},
+  {name:"이서연", pw:"sy8830@", hr:81, bp:"124/79", bs:101, ht:162, wt:54, bmi:20.6, age:19},
+  {name:"박지훈", pw:"jh5512#", hr:67, bp:"115/73", bs:88, ht:181, wt:77, bmi:23.5, age:24},
+  {name:"최유진", pw:"yj9204$", hr:90, bp:"130/85", bs:110, ht:168, wt:72, bmi:25.5, age:28},
+  {name:"정도윤", pw:"dy4488!", hr:75, bp:"121/78", bs:97, ht:173, wt:70, bmi:23.4, age:26},
+  {name:"한지민", pw:"jm3317%", hr:64, bp:"112/70", bs:85, ht:160, wt:50, bmi:19.5, age:20},
+  {name:"오세훈", pw:"sh7740&", hr:88, bp:"135/88", bs:118, ht:178, wt:83, bmi:26.2, age:31},
+  {name:"윤채원", pw:"cw6159*", hr:70, bp:"117/75", bs:91, ht:165, wt:58, bmi:21.3, age:22},
+  {name:"장현우", pw:"hw2093!", hr:79, bp:"126/82", bs:104, ht:182, wt:86, bmi:26.0, age:29},
+  {name:"송나은", pw:"ne5401@", hr:73, bp:"119/77", bs:95, ht:167, wt:60, bmi:21.5, age:23},
+  {name:"강태윤", pw:"ty3841#", hr:76, bp:"122/80", bs:99, ht:177, wt:74, bmi:23.6, age:25},
+  {name:"백지아", pw:"ja7712!", hr:69, bp:"114/72", bs:87, ht:163, wt:52, bmi:19.6, age:18},
+  {name:"서민혁", pw:"mh9054@", hr:84, bp:"128/84", bs:108, ht:180, wt:82, bmi:25.3, age:30},
+  {name:"임수빈", pw:"sb6438$", hr:71, bp:"116/74", bs:90, ht:166, wt:57, bmi:20.7, age:21},
+  {name:"조현서", pw:"hs2201%", hr:93, bp:"138/90", bs:121, ht:172, wt:79, bmi:26.7, age:34},
+  {name:"신예린", pw:"yr8195&", hr:66, bp:"111/69", bs:84, ht:159, wt:48, bmi:19.0, age:19},
+  {name:"권도현", pw:"dh4376*", hr:80, bp:"125/81", bs:103, ht:184, wt:88, bmi:26.0, age:27},
+  {name:"황지우", pw:"jw5520!", hr:74, bp:"118/76", bs:94, ht:170, wt:63, bmi:21.8, age:24},
+  {name:"유승민", pw:"sm2987@", hr:86, bp:"132/86", bs:112, ht:176, wt:81, bmi:26.1, age:32},
+  {name:"노가은", pw:"ge1643#", hr:68, bp:"113/71", bs:86, ht:161, wt:51, bmi:19.7, age:20},
+  {name:"문서준", pw:"sj4820!", hr:77, bp:"123/79", bs:100, ht:179, wt:76, bmi:23.7, age:26},
+  {name:"안하린", pw:"hr9157@", hr:65, bp:"110/68", bs:83, ht:158, wt:47, bmi:18.8, age:18},
+  {name:"류지호", pw:"jh3642#", hr:82, bp:"127/83", bs:106, ht:183, wt:85, bmi:25.4, age:29},
+  {name:"남예은", pw:"ye7031$", hr:73, bp:"117/75", bs:92, ht:164, wt:56, bmi:20.8, age:22},
+  {name:"고은찬", pw:"ec5584%", hr:91, bp:"136/89", bs:119, ht:181, wt:87, bmi:26.6, age:33},
+  {name:"진소율", pw:"sy2419&", hr:70, bp:"115/73", bs:89, ht:167, wt:59, bmi:21.2, age:23},
+  {name:"배현준", pw:"hj8775*", hr:78, bp:"124/80", bs:101, ht:174, wt:72, bmi:23.8, age:27},
+  {name:"차다인", pw:"di6928!", hr:67, bp:"112/70", bs:85, ht:160, wt:49, bmi:19.1, age:19},
+  {name:"손우진", pw:"wj3506@", hr:85, bp:"131/85", bs:111, ht:185, wt:90, bmi:26.3, age:31},
+  {name:"전채린", pw:"cr1482#", hr:72, bp:"118/76", bs:93, ht:169, wt:61, bmi:21.4, age:24},
+  {name:"유도현", pw:"dh5274!", hr:74, bp:"120/78", bs:96, ht:176, wt:71, bmi:22.9, age:25},
+  {name:"김하은", pw:"he8410@", hr:68, bp:"113/72", bs:86, ht:162, wt:53, bmi:20.2, age:20},
+  {name:"이준서", pw:"js3095#", hr:83, bp:"129/84", bs:107, ht:182, wt:84, bmi:25.4, age:30},
+  {name:"박서아", pw:"sa7742$", hr:71, bp:"116/74", bs:90, ht:165, wt:55, bmi:20.2, age:21},
+  {name:"최태성", pw:"ts4581%", hr:89, bp:"134/87", bs:115, ht:178, wt:82, bmi:25.9, age:32},
+  {name:"정유나", pw:"yn6327&", hr:66, bp:"111/69", bs:84, ht:159, wt:50, bmi:19.8, age:19},
+  {name:"오지환", pw:"jh9184*", hr:79, bp:"126/82", bs:104, ht:184, wt:89, bmi:26.3, age:28},
+  {name:"한수민", pw:"sm2456!", hr:72, bp:"118/75", bs:92, ht:168, wt:60, bmi:21.3, age:23},
+  {name:"송민재", pw:"mj5803@", hr:87, bp:"133/86", bs:113, ht:180, wt:83, bmi:25.6, age:31},
+  {name:"강나연", pw:"ny1679#", hr:69, bp:"114/71", bs:88, ht:163, wt:54, bmi:20.3, age:22},
+  {name:"백도윤", pw:"dy7418!", hr:75, bp:"121/79", bs:98, ht:177, wt:73, bmi:23.3, age:26},
+  {name:"신가은", pw:"ge3925@", hr:67, bp:"112/70", bs:85, ht:161, wt:52, bmi:20.1, age:19},
+  {name:"조민성", pw:"ms8601#", hr:84, bp:"128/83", bs:109, ht:183, wt:86, bmi:25.7, age:30},
+  {name:"임채원", pw:"cw5147$", hr:70, bp:"115/73", bs:89, ht:166, wt:56, bmi:20.3, age:21},
+  {name:"서현우", pw:"hw2774%", hr:92, bp:"137/89", bs:120, ht:181, wt:88, bmi:26.9, age:34},
+  {name:"윤다희", pw:"dh6480&", hr:65, bp:"110/68", bs:83, ht:158, wt:48, bmi:19.2, age:18},
+  {name:"장우석", pw:"ws9352*", hr:81, bp:"127/82", bs:105, ht:185, wt:91, bmi:26.6, age:29},
+  {name:"노서연", pw:"sy4038!", hr:73, bp:"118/76", bs:94, ht:167, wt:59, bmi:21.2, age:23},
+  {name:"문지환", pw:"jh7261@", hr:86, bp:"132/85", bs:112, ht:179, wt:80, bmi:25.0, age:31},
+  {name:"차유림", pw:"yr1509#", hr:68, bp:"113/71", bs:87, ht:164, wt:55, bmi:20.4, age:20},
+  {name:"김태민", pw:"tm6842!", hr:76, bp:"122/80", bs:100, ht:178, wt:75, bmi:23.7, age:27},
+  {name:"박하린", pw:"hr2917@", hr:66, bp:"111/69", bs:84, ht:160, wt:50, bmi:19.5, age:19},
+  {name:"이준혁", pw:"jh5308#", hr:85, bp:"130/85", bs:111, ht:184, wt:87, bmi:25.7, age:31},
+  {name:"최서윤", pw:"sy8471$", hr:72, bp:"117/75", bs:91, ht:165, wt:57, bmi:20.9, age:22},
+  {name:"정민우", pw:"mw1649%", hr:90, bp:"135/88", bs:117, ht:182, wt:85, bmi:25.7, age:33},
+  {name:"오다은", pw:"de7035&", hr:69, bp:"114/72", bs:86, ht:163, wt:53, bmi:19.9, age:20},
+  {name:"한지후", pw:"jh9284*", hr:80, bp:"126/81", bs:104, ht:186, wt:92, bmi:26.6, age:28},
+  {name:"송유빈", pw:"yb4762!", hr:74, bp:"119/77", bs:95, ht:168, wt:61, bmi:21.6, age:24},
+  {name:"강현준", pw:"hj3157@", hr:88, bp:"133/86", bs:114, ht:180, wt:84, bmi:25.9, age:32},
+  {name:"윤소민", pw:"sm8520#", hr:67, bp:"112/70", bs:85, ht:162, wt:52, bmi:19.8, age:21},
+  {name:"서지훈", pw:"jh4728!", hr:77, bp:"123/81", bs:101, ht:179, wt:77, bmi:24.0, age:28},
+  {name:"김나은", pw:"ne1854@", hr:68, bp:"113/71", bs:87, ht:161, wt:51, bmi:19.7, age:20},
+  {name:"박도현", pw:"dh6943#", hr:83, bp:"128/84", bs:108, ht:183, wt:85, bmi:25.4, age:30},
+  {name:"최유리", pw:"yr2509$", hr:71, bp:"116/74", bs:90, ht:166, wt:56, bmi:20.3, age:22},
+  {name:"정승민", pw:"sm7316%", hr:91, bp:"136/89", bs:119, ht:181, wt:87, bmi:26.6, age:34},
+  {name:"오채린", pw:"cr5480&", hr:65, bp:"110/68", bs:83, ht:159, wt:49, bmi:19.4, age:18},
+  {name:"한민재", pw:"mj9032*", hr:79, bp:"125/81", bs:103, ht:185, wt:90, bmi:26.3, age:29},
+  {name:"송서연", pw:"sy4175!", hr:73, bp:"118/76", bs:93, ht:167, wt:58, bmi:20.8, age:23},
+  {name:"강우진", pw:"wj8621@", hr:87, bp:"132/86", bs:113, ht:180, wt:82, bmi:25.3, age:31},
+  {name:"윤하린", pw:"hr3964#", hr:69, bp:"114/72", bs:88, ht:164, wt:54, bmi:20.1, age:21},
+  {name:"문태윤", pw:"ty5814!", hr:75, bp:"121/78", bs:97, ht:176, wt:72, bmi:23.2, age:26},
+  {name:"안소율", pw:"sy2479@", hr:67, bp:"112/70", bs:85, ht:160, wt:50, bmi:19.5, age:19},
+  {name:"류현성", pw:"hs6305#", hr:84, bp:"129/84", bs:109, ht:184, wt:88, bmi:26.0, age:30},
+  {name:"남지아", pw:"ja4581$", hr:70, bp:"115/73", bs:89, ht:165, wt:55, bmi:20.2, age:21},
+  {name:"고민재", pw:"mj9726%", hr:92, bp:"137/90", bs:121, ht:182, wt:86, bmi:26.0, age:34},
+  {name:"진다은", pw:"de3148&", hr:66, bp:"111/69", bs:84, ht:158, wt:48, bmi:19.2, age:18},
+  {name:"배성훈", pw:"sh8264*", hr:80, bp:"126/82", bs:104, ht:186, wt:93, bmi:26.9, age:29},
+  {name:"차예린", pw:"yr5902!", hr:73, bp:"118/75", bs:92, ht:168, wt:60, bmi:21.3, age:23},
+  {name:"손지호", pw:"jh7431@", hr:86, bp:"133/86", bs:114, ht:179, wt:81, bmi:25.3, age:32},
+  {name:"전하은", pw:"he2057#", hr:68, bp:"113/71", bs:86, ht:163, wt:53, bmi:19.9, age:20},
+  {name:"백현우", pw:"hw5182!", hr:75, bp:"121/78", bs:97, ht:177, wt:74, bmi:23.6, age:26},
+  {name:"신유진", pw:"yj2407@", hr:67, bp:"112/70", bs:85, ht:162, wt:53, bmi:20.2, age:19},
+  {name:"조태훈", pw:"th6831#", hr:84, bp:"129/84", bs:109, ht:184, wt:88, bmi:26.0, age:30},
+  {name:"임가은", pw:"ge9574$", hr:70, bp:"115/73", bs:89, ht:165, wt:55, bmi:20.2, age:21},
+  {name:"서민재", pw:"mj3740%", hr:92, bp:"137/90", bs:120, ht:182, wt:86, bmi:26.0, age:34},
+  {name:"윤수아", pw:"sa6285&", hr:66, bp:"111/69", bs:84, ht:160, wt:50, bmi:19.5, age:18},
+  {name:"장지호", pw:"jh8019*", hr:80, bp:"126/82", bs:105, ht:186, wt:93, bmi:26.9, age:28},
+  {name:"노예린", pw:"yr4526!", hr:73, bp:"118/76", bs:94, ht:168, wt:60, bmi:21.3, age:23},
+  {name:"문현성", pw:"hs7163@", hr:86, bp:"132/85", bs:112, ht:179, wt:81, bmi:25.3, age:31},
+  {name:"차나연", pw:"ny1958#", hr:68, bp:"113/71", bs:87, ht:163, wt:54, bmi:20.3, age:20},
+  {name:"김도훈", pw:"dh4719!", hr:76, bp:"122/79", bs:99, ht:178, wt:76, bmi:24.0, age:27},
+  {name:"이하린", pw:"hr2583@", hr:68, bp:"113/71", bs:86, ht:161, wt:52, bmi:20.1, age:20},
+  {name:"박준영", pw:"jy6307#", hr:85, bp:"130/85", bs:111, ht:183, wt:87, bmi:26.0, age:31},
+  {name:"최서진", pw:"sj9145$", hr:71, bp:"116/74", bs:90, ht:166, wt:56, bmi:20.3, age:22},
+  {name:"정우성", pw:"ws3472%", hr:91, bp:"136/88", bs:118, ht:181, wt:85, bmi:26.0, age:33},
+  {name:"오나경", pw:"nk5821&", hr:65, bp:"110/68", bs:83, ht:159, wt:49, bmi:19.4, age:18},
+  {name:"한지성", pw:"js7460*", hr:80, bp:"126/81", bs:104, ht:185, wt:91, bmi:26.6, age:29},
+  {name:"송다은", pw:"de2954!", hr:74, bp:"119/76", bs:94, ht:167, wt:58, bmi:20.8, age:24},
+  {name:"강민혁", pw:"mh8036@", hr:87, bp:"133/86", bs:114, ht:180, wt:83, bmi:25.6, age:32},
+  {name:"윤채아", pw:"ca1748#", hr:69, bp:"114/72", bs:88, ht:164, wt:55, bmi:20.4, age:21},
+  {name:"강도윤", pw:"Tk9#vL2q", hr:72, bp:"118/76", bs:92, ht:173, wt:68, bmi:22.7, age:21},
+  {name:"윤태성", pw:"mR7!xP4z", hr:81, bp:"126/82", bs:104, ht:181, wt:84, bmi:25.6, age:34},
+  {name:"서하진", pw:"Qw2@Na8K", hr:65, bp:"110/70", bs:88, ht:166, wt:57, bmi:20.7, age:19},
+  {name:"민주혁", pw:"bT5$Yr1m", hr:77, bp:"132/85", bs:111, ht:178, wt:91, bmi:28.7, age:42},
+  {name:"차은호", pw:"Lx8&Vu3Q", hr:69, bp:"115/74", bs:95, ht:170, wt:63, bmi:21.8, age:27},
+  {name:"한지율", pw:"pD4!Ks9e", hr:88, bp:"140/90", bs:126, ht:175, wt:96, bmi:31.3, age:51},
+  {name:"오세린", pw:"Zn7@Ht2W", hr:73, bp:"121/79", bs:99, ht:162, wt:54, bmi:20.6, age:24},
+  {name:"배준혁", pw:"cF1#Mj6r", hr:67, bp:"108/68", bs:84, ht:185, wt:79, bmi:23.1, age:31},
+  {name:"류시안", pw:"Ua5$Qx8p", hr:79, bp:"129/84", bs:117, ht:172, wt:88, bmi:29.7, age:46},
+  {name:"남유찬", pw:"jK3!Lv0N", hr:71, bp:"117/75", bs:90, ht:168, wt:61, bmi:21.6, age:22},
+  {name:"이서준", pw:"Rx9@Bw4t", hr:74, bp:"122/78", bs:97, ht:176, wt:72, bmi:23.2, age:29},
+  {name:"김하율", pw:"mE2#Zn7y", hr:83, bp:"135/88", bs:120, ht:169, wt:82, bmi:28.7, age:44},
+  {name:"박도현", pw:"Qp6$Hs1L", hr:68, bp:"112/71", bs:89, ht:182, wt:76, bmi:22.9, age:26},
+  {name:"최유진", pw:"vT8&Ka5d", hr:91, bp:"145/93", bs:132, ht:171, wt:95, bmi:32.5, age:53},
+  {name:"정민재", pw:"Yw3!Nr9q", hr:70, bp:"116/73", bs:93, ht:174, wt:67, bmi:22.1, age:23},
+  {name:"송지후", pw:"gL1@Px4M", hr:76, bp:"124/80", bs:101, ht:179, wt:85, bmi:26.5, age:38},
+  {name:"백서윤", pw:"Hu7#Qe2z", hr:64, bp:"109/69", bs:86, ht:160, wt:50, bmi:19.5, age:20},
+  {name:"임태윤", pw:"kR5$Wt8b", hr:80, bp:"131/86", bs:114, ht:183, wt:92, bmi:27.5, age:47},
+  {name:"조하린", pw:"Da0!Yv3J", hr:72, bp:"119/77", bs:96, ht:167, wt:59, bmi:21.2, age:25},
+  {name:"신우진", pw:"nX4@Lm6p", hr:66, bp:"111/72", bs:87, ht:177, wt:70, bmi:22.3, age:30},
+  {name:"유건우", pw:"Ps8#Kq1R", hr:75, bp:"123/79", bs:98, ht:172, wt:71, bmi:24.0, age:28},
+  {name:"장예린", pw:"fV2$Zw7t", hr:69, bp:"114/72", bs:91, ht:165, wt:56, bmi:20.6, age:22},
+  {name:"문시우", pw:"Ce5!Hx9m", hr:84, bp:"137/89", bs:122, ht:180, wt:89, bmi:27.5, age:45},
+  {name:"고채린", pw:"Jl3@Ru4Q", hr:67, bp:"110/68", bs:85, ht:163, wt:52, bmi:19.6, age:19},
+  {name:"하준석", pw:"Bw7#Np0k", hr:78, bp:"128/83", bs:109, ht:177, wt:83, bmi:26.5, age:36},
+  {name:"노지안", pw:"tM1$Yx6V", hr:73, bp:"120/76", bs:94, ht:170, wt:64, bmi:22.1, age:24},
+  {name:"양도현", pw:"Qd9!Ka2r", hr:90, bp:"146/95", bs:135, ht:174, wt:98, bmi:32.4, age:55},
+  {name:"권서아", pw:"uP4@Ls8e", hr:65, bp:"108/67", bs:83, ht:161, wt:49, bmi:18.9, age:18},
+  {name:"진태오", pw:"Hx5#Wm1Z", hr:71, bp:"117/74", bs:92, ht:184, wt:78, bmi:23.0, age:32},
+  {name:"안수빈", pw:"rT7$Qv3n", hr:79, bp:"130/85", bs:116, ht:168, wt:74, bmi:26.2, age:41},
+  {name:"황지훈", pw:"Ny2!Bk6P", hr:72, bp:"118/75", bs:93, ht:175, wt:69, bmi:22.5, age:27},
+  {name:"손예진", pw:"gQ8@Zd4t", hr:66, bp:"111/70", bs:87, ht:164, wt:55, bmi:20.4, age:21},
+  {name:"류현우", pw:"La1#Xr5m", hr:85, bp:"138/90", bs:124, ht:181, wt:90, bmi:27.5, age:48},
+  {name:"전다은", pw:"vH3$Ke9W", hr:74, bp:"121/78", bs:97, ht:169, wt:62, bmi:21.7, age:26},
+  {name:"채민성", pw:"Pw6!Mt2q", hr:80, bp:"133/86", bs:112, ht:178, wt:86, bmi:27.1, age:39},
+  {name:"심하린", pw:"sR4@Yx7J", hr:68, bp:"113/72", bs:90, ht:162, wt:53, bmi:20.2, age:20},
+  {name:"구태민", pw:"Zn0#Lu8b", hr:92, bp:"148/96", bs:139, ht:173, wt:101, bmi:33.7, age:57},
+  {name:"변서율", pw:"kD5$Qp1V", hr:70, bp:"116/74", bs:92, ht:167, wt:60, bmi:21.5, age:23},
+  {name:"탁준호", pw:"Fx9!Nr3e", hr:77, bp:"126/81", bs:105, ht:183, wt:81, bmi:24.2, age:34},
+  {name:"남채원", pw:"Ce2@Hw6M", hr:64, bp:"107/66", bs:82, ht:159, wt:48, bmi:19.0, age:18},
+  {name:"백현서", pw:"jT7#Ka4z", hr:73, bp:"119/77", bs:95, ht:171, wt:66, bmi:22.6, age:25},
+  {name:"윤재민", pw:"Rp1$Vx8q", hr:81, bp:"134/87", bs:118, ht:179, wt:88, bmi:27.5, age:43},
+  {name:"마지후", pw:"mL3!Ys5N", hr:67, bp:"110/69", bs:86, ht:176, wt:71, bmi:22.9, age:29},
+  {name:"서유나", pw:"Qw6@Ht0r", hr:76, bp:"125/80", bs:102, ht:165, wt:63, bmi:23.1, age:31},
+  {name:"도승혁", pw:"bX4#Ke7p", hr:89, bp:"142/91", bs:129, ht:182, wt:97, bmi:29.3, age:52},
+  {name:"한시아", pw:"uN2$Zm9J", hr:65, bp:"109/68", bs:84, ht:160, wt:51, bmi:19.9, age:19},
+  {name:"천도윤", pw:"Dv8!Qx1m", hr:78, bp:"127/82", bs:108, ht:174, wt:80, bmi:26.4, age:37},
+  {name:"강채린", pw:"Ys5@Lp3W", hr:71, bp:"117/75", bs:91, ht:168, wt:58, bmi:20.5, age:22},
+  {name:"오민재", pw:"gR7#Nk6t", hr:83, bp:"136/88", bs:121, ht:185, wt:93, bmi:27.2, age:46},
+  {name:"류하은", pw:"Ha0$Vq4P", hr:69, bp:"114/73", bs:89, ht:163, wt:54, bmi:20.3, age:24},
+  {name:"정시우", pw:"cM2!Xw8e", hr:74, bp:"122/79", bs:98, ht:177, wt:73, bmi:23.3, age:30},
+  {name:"이가온", pw:"Tz9@Kr1L", hr:68, bp:"112/71", bs:88, ht:166, wt:57, bmi:20.7, age:21},
+  {name:"최태윤", pw:"pQ5#Yv7b", hr:86, bp:"139/90", bs:125, ht:181, wt:91, bmi:27.8, age:49},
+  {name:"문서아", pw:"Lf3$Nu0R", hr:72, bp:"118/76", bs:94, ht:164, wt:56, bmi:20.8, age:23},
+  {name:"하준영", pw:"Wx8!Hm2q", hr:79, bp:"129/84", bs:113, ht:178, wt:84, bmi:26.5, age:40},
+  {name:"배하린", pw:"jD4@Ka6Z", hr:66, bp:"110/69", bs:85, ht:161, wt:50, bmi:19.3, age:18},
+  {name:"남도현", pw:"Rn1#Tp9m", hr:91, bp:"147/94", bs:137, ht:175, wt:99, bmi:32.3, age:56},
+  {name:"신예린", pw:"sV7$Qx5J", hr:70, bp:"116/74", bs:90, ht:167, wt:59, bmi:21.2, age:24},
+  {name:"조민규", pw:"Ce0!Ly3W", hr:77, bp:"126/82", bs:106, ht:183, wt:82, bmi:24.5, age:35},
+  {name:"장수아", pw:"kH2@Zw8p", hr:65, bp:"108/67", bs:83, ht:158, wt:47, bmi:18.8, age:19},
+  {name:"권도윤", pw:"Qa6#Mr4t", hr:75, bp:"123/80", bs:99, ht:172, wt:70, bmi:23.7, age:28},
+  {name:"서채은", pw:"vP1$Nx7L", hr:67, bp:"111/70", bs:86, ht:163, wt:53, bmi:19.9, age:20},
+  {name:"임준서", pw:"Yt5!Ke9b", hr:84, bp:"138/89", bs:123, ht:180, wt:90, bmi:27.8, age:47},
+  {name:"윤하린", pw:"mR3@Hu0Q", hr:71, bp:"117/75", bs:92, ht:168, wt:60, bmi:21.3, age:25},
+  {name:"김태성", pw:"Dx8#Wq2n", hr:80, bp:"132/85", bs:115, ht:176, wt:85, bmi:27.4, age:41},
+  {name:"박시온", pw:"Lp4$Zv6J", hr:64, bp:"107/66", bs:81, ht:160, wt:49, bmi:19.1, age:18},
+  {name:"노현우", pw:"gN1!Kt7e", hr:93, bp:"149/97", bs:141, ht:174, wt:103, bmi:34.0, age:58},
+  {name:"차유진", pw:"Bw9@Xm5P", hr:69, bp:"115/73", bs:89, ht:165, wt:55, bmi:20.2, age:22},
+  {name:"한준혁", pw:"Hr2#Qy0m", hr:78, bp:"127/83", bs:107, ht:184, wt:83, bmi:24.5, age:36},
+  {name:"오서윤", pw:"cT6$Lv8R", hr:66, bp:"109/68", bs:84, ht:162, wt:52, bmi:19.8, age:19},
+  {name:"송도윤", pw:"jK4!Np1W", hr:73, bp:"120/78", bs:96, ht:173, wt:68, bmi:22.7, age:26},
+  {name:"진하은", pw:"Qx7@Ze3t", hr:65, bp:"108/67", bs:82, ht:161, wt:50, bmi:19.3, age:18},
+  {name:"양준호", pw:"uM0#Hr5b", hr:85, bp:"140/91", bs:127, ht:182, wt:94, bmi:28.4, age:50},
+  {name:"탁예린", pw:"Fs2$Yq9L", hr:72, bp:"118/76", bs:93, ht:166, wt:58, bmi:21.0, age:23},
+  {name:"백민재", pw:"Va8!Kw4p", hr:79, bp:"130/84", bs:114, ht:179, wt:87, bmi:27.2, age:42},
+  {name:"류채원", pw:"nD1@Xm6J", hr:67, bp:"111/70", bs:87, ht:164, wt:54, bmi:20.1, age:21},
+  {name:"구시안", pw:"Pe5#Lt3Q", hr:90, bp:"145/93", bs:133, ht:176, wt:100, bmi:32.3, age:55},
+  {name:"심서윤", pw:"Rw9$Hu7z", hr:70, bp:"116/74", bs:91, ht:167, wt:59, bmi:21.2, age:24},
+  {name:"황태민", pw:"gC0!Nx2m", hr:76, bp:"124/81", bs:103, ht:183, wt:80, bmi:23.9, age:33},
+  {name:"변유나", pw:"Tk6@Qv8P", hr:64, bp:"106/65", bs:80, ht:159, wt:47, bmi:18.6, age:18},
+  {name:"강태윤", pw:"mL4#Yr1b", hr:74, bp:"121/79", bs:97, ht:175, wt:72, bmi:23.5, age:29},
+  {name:"서하린", pw:"Hx7$Ke5R", hr:66, bp:"110/69", bs:85, ht:162, wt:51, bmi:19.4, age:19},
+  {name:"문준혁", pw:"Qa2!Wp9t", hr:83, bp:"137/88", bs:121, ht:181, wt:89, bmi:27.2, age:46},
+  {name:"차유진", pw:"vN0@Zm3J", hr:71, bp:"117/75", bs:92, ht:168, wt:60, bmi:21.3, age:24},
+  {name:"윤시우", pw:"Ds8#Lu6q", hr:80, bp:"133/86", bs:116, ht:177, wt:86, bmi:27.4, age:40},
+  {name:"남예린", pw:"Yp1$Kr4W", hr:65, bp:"109/68", bs:84, ht:160, wt:49, bmi:19.1, age:18},
+  {name:"조민성", pw:"cF5!Ht7m", hr:92, bp:"148/95", bs:138, ht:174, wt:102, bmi:33.7, age:57},
+  {name:"신다은", pw:"Rn3@Qx0L", hr:69, bp:"114/72", bs:88, ht:165, wt:55, bmi:20.2, age:22},
+  {name:"배도현", pw:"jV9#Nk2p", hr:77, bp:"126/82", bs:105, ht:184, wt:82, bmi:24.2, age:35},
+  {name:"한채원", pw:"Bw4$Ye8J", hr:64, bp:"107/66", bs:81, ht:158, wt:46, bmi:18.4, age:18},
+  {name:"최도윤", pw:"uT1!Lm5R", hr:75, bp:"123/80", bs:100, ht:174, wt:71, bmi:23.5, age:28},
+  {name:"장서아", pw:"Kx6@Qp3z", hr:67, bp:"111/70", bs:86, ht:163, wt:52, bmi:19.6, age:20},
+  {name:"임현우", pw:"gH0#Vr7b", hr:84, bp:"139/89", bs:124, ht:180, wt:91, bmi:28.1, age:48},
+  {name:"류지안", pw:"Pa2$Zw9m", hr:72, bp:"118/76", bs:93, ht:167, wt:59, bmi:21.2, age:23},
+  {name:"박준서", pw:"Lf8!Nx4Q", hr:81, bp:"134/87", bs:118, ht:178, wt:88, bmi:27.8, age:43},
+  {name:"오하린", pw:"Qm7#Lv2P", hr:65, bp:"108/67", bs:83, ht:161, wt:50, bmi:19.3, age:18},
+  {name:"정민규", pw:"xR4!Ka9t", hr:93, bp:"149/96", bs:140, ht:175, wt:104, bmi:33.9, age:58},
+  {name:"김채은", pw:"Hw1@Nz6M", hr:70, bp:"116/74", bs:90, ht:166, wt:56, bmi:20.3, age:22},
+  {name:"노태성", pw:"pD8$Yq3b", hr:78, bp:"128/83", bs:109, ht:183, wt:84, bmi:25.1, age:37},
+  {name:"유서윤", pw:"Ce5#Xt0L", hr:64, bp:"106/65", bs:79, ht:159, wt:47, bmi:18.6, age:18},
+];
+
+function doLogin() {
+  const name = document.getElementById('input-name').value.trim();
+  const pw   = document.getElementById('input-pw').value;
+
+  const user = users.find(u => u.name === name);
+  if (!user) {
+    showPopup('⚠️', '사용자를 찾을 수 없습니다', `'${name}'(으)로 등록된 사용자가 없습니다.\n이름을 다시 확인해 주세요.`);
+    return;
+  }
+  if (user.pw !== pw) {
+    showPopup('🔒', '비밀번호가 다릅니다', '입력하신 비밀번호가 일치하지 않습니다.\n다시 시도해 주세요.');
+    return;
+  }
+  showDashboard(user);
+}
+
+function showDashboard(u) {
+  document.getElementById('login-screen').style.display = 'none';
+  const hs = document.getElementById('health-screen');
+  hs.style.display = 'block';
+
+  document.getElementById('dash-name').textContent = u.name + ' 님';
+  document.getElementById('dash-age').textContent = `나이: ${u.age}세`;
+  document.getElementById('v-hr').textContent = u.hr;
+  document.getElementById('v-bp').textContent = u.bp;
+  document.getElementById('v-bs').textContent = u.bs;
+  document.getElementById('v-ht').textContent = u.ht;
+  document.getElementById('v-wt').textContent = u.wt;
+  document.getElementById('v-bmi').textContent = u.bmi;
+
+  // BMI status
+  let statusText, statusColor;
+  if (u.bmi < 18.5)      { statusText='저체중'; statusColor='#0099ff'; }
+  else if (u.bmi < 23)   { statusText='정상';   statusColor='#3fb950'; }
+  else if (u.bmi < 25)   { statusText='과체중'; statusColor='#d29922'; }
+  else                   { statusText='비만';   statusColor='#f85149'; }
+
+  const badge = document.getElementById('v-bmi-status');
+  badge.textContent = statusText;
+  badge.style.background = statusColor + '22';
+  badge.style.color = statusColor;
+  badge.style.border = `1px solid ${statusColor}55`;
+
+  // BMI pointer: map 10–35 → 0%–100%
+  const pct = Math.min(100, Math.max(0, (u.bmi - 10) / 25 * 100));
+  setTimeout(() => {
+    document.getElementById('bmi-pointer').style.left = pct + '%';
+  }, 100);
+}
+
+function doLogout() {
+  document.getElementById('health-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('input-name').value = '';
+  document.getElementById('input-pw').value = '';
+}
+
+function showPopup(icon, title, msg) {
+  document.getElementById('popup-icon').textContent = icon;
+  document.getElementById('popup-title').textContent = title;
+  document.getElementById('popup-msg').textContent = msg;
+  document.getElementById('popup').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('popup').classList.remove('show');
+}
+
+// Enter key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
